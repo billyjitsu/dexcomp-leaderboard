@@ -63,7 +63,15 @@ export interface PublicLeaderboard {
   rows: PublicRow[];
 }
 
+// What we know about a wallet (known-wallets.ts). Admin only.
+export interface WalletLabel {
+  label: string;
+  note: string | null;
+}
+
 export interface Leaderboard {
+  // Added by the admin API when it serves a board; not stored in the snapshot.
+  labels?: Record<string, WalletLabel>;
   generatedAt: number;
   round: { start: number; end: number; label: string };
   roundId: string; // "preview" when no rounds are configured

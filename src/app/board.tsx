@@ -137,7 +137,7 @@ export function Board({ view }: { view: "public" | "admin" }) {
             {admin ? (
               <>
                 <input className="search note" id="admin-note" type="text" placeholder="Note for manual opt-ins (ticket #)" maxLength={200} autoComplete="off" aria-label="Note for manual opt-ins" />
-                <input className="search" id="search" type="search" placeholder="Find a wallet (0x...)" autoComplete="off" spellCheck={false} maxLength={42} aria-label="Find a wallet" />
+                <input className="search" id="search" type="search" placeholder="Find a wallet (0x...) or label" autoComplete="off" spellCheck={false} maxLength={42} aria-label="Find a wallet by address or label" />
               </>
             ) : (
               <div className="wallet-box">

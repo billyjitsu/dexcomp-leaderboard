@@ -77,7 +77,10 @@ export async function storeSwapsAndCredits(swaps: Swap[]): Promise<{ priceSource
       sql().query(
         `insert into tx_credits (tx_hash, wallet, ts, credit_usd, gross_usd, fees_usd, indexer_usd, off_market, paid, received)
          select * from unnest($1::text[], $2::text[], $3::bigint[], $4::float8[], $5::float8[], $6::float8[], $7::float8[], $8::bool[], $9::jsonb[], $10::jsonb[])
-         on conflict (tx_hash) do update set wallet = excluded.wallet, ts = excluded.ts, credit_usd = excluded.credit_usd,
+         on conflict (tx_hash) do update set
+           -- a relayed swap keeps the trader it was resolved to (relay.ts), not the relayer
+           wallet = coalesce((select r.trader from tx_traders r where r.tx_hash = excluded.tx_hash and r.status = 'resolved'), excluded.wallet),
+           ts = excluded.ts, credit_usd = excluded.credit_usd,
            gross_usd = excluded.gross_usd, fees_usd = excluded.fees_usd, indexer_usd = excluded.indexer_usd,
            off_market = excluded.off_market, paid = excluded.paid, received = excluded.received`,
         [

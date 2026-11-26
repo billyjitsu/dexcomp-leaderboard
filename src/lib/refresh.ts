@@ -9,6 +9,7 @@ import { PREVIEW_DAYS, REFRESH_SEC } from "./config.ts";
 import { num, nowSec, sql } from "./db.ts";
 import { buildSnapshot, type BoardTarget } from "./board.ts";
 import { allRounds, defaultRound, previewWindow, statusOf, type Round } from "./rounds.ts";
+import { resolveRelayed } from "./relay.ts";
 import { syncWindow } from "./sync.ts";
 
 const LEASE_SEC = 280; // just under the 300s function limit
@@ -87,6 +88,9 @@ export async function refresh(roundId: string, force = false): Promise<RefreshRe
       const sync = await syncWindow(t.roundId, t.start, t.end, passStart, t.roundId === "preview");
       fetched += sync.fetched;
       complete = sync.complete;
+      // Credit app (relayed) swaps to the trader instead of the relayer. Never fatal: a
+      // swap that could not be checked stays with its sender and is retried next refresh.
+      await resolveRelayed(t.start, t.end).catch((err) => console.error("[relay] failed:", err));
       await buildSnapshot(t, sync.throughTs, passStart, sync.priceSources);
       const latest = await resolve(roundId, nowSec());
       if (!latest || latest.dirtyAt < passStart) break;

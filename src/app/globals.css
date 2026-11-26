@@ -199,6 +199,7 @@ tr.detail-row > td { padding: 0 16px 14px 16px; text-align: left; }
 .round-select option { background: var(--gray-700); color: var(--white-100); }
 .round-admin .table-head { align-items: flex-start; }
 .round-admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.wlabel { display: block; margin-top: 3px; font-size: 11px; color: var(--white-56); white-space: nowrap; cursor: help; }
 .dq-reason { display: block; font-size: 10px; color: var(--red-100); margin-top: 2px; white-space: normal; max-width: 200px; }
 .join-banner.review { background: var(--yellow-a12); color: var(--yellow-100); }
 /* Round countdown (perps style) */

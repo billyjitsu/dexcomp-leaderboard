@@ -73,6 +73,18 @@ create table if not exists tx_credits (
 create index if not exists tx_credits_ts on tx_credits (ts);
 create index if not exists tx_credits_wallet_ts on tx_credits (wallet, ts);
 
+-- Who really traded, for swaps that may have been sent by a relayer (src/lib/relay.ts).
+-- One row per checked transaction; tx_credits.wallet is set to `trader` when resolved.
+create table if not exists tx_traders (
+  tx_hash     text primary key,
+  origin      text not null,           -- who sent the transaction (the relayer when relayed)
+  status      text not null check (status in ('direct', 'resolved', 'unresolved')),
+  trader      text,                    -- set when status = resolved
+  method      text,                    -- funder: paid for the swap. recipient: received its output
+  checked_at  bigint not null
+);
+create index if not exists tx_traders_relayed on tx_traders (origin) where status <> 'direct';
+
 -- Each competition-pool hop of a transaction, with its share of the transaction's credit.
 create table if not exists tx_hops (
   tx_hash    text not null references tx_credits(tx_hash) on delete cascade,

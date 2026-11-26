@@ -10,7 +10,25 @@ export const INDEXER_URL = "https://indexer.hyperindex.xyz/e92f230/v1/graphql";
 export const BINANCE_API = "https://data-api.binance.vision";
 export const COINBASE_API = "https://api.exchange.coinbase.com";
 
-export type PriceKey = "usd" | "eth" | "btc" | "kat";
+// Katana JSON-RPC, used only to work out who really traded in a relayed swap (relay.ts).
+// The public endpoint is rate-limited; set KATANA_RPC_URL to a keyed endpoint if it gets busy.
+export const KATANA_RPC_URL = process.env.KATANA_RPC_URL ?? "https://rpc.katana.network";
+
+// Swaps made in the Katana app are sent by a relayer wallet, not by the trader: the trader
+// funds a one-off deposit account, then a relayer calls one of RELAY_ENTRIES and the swap
+// runs through RELAY_ROUTERS. The indexer's `origin` is then the relayer. Lowercase.
+export const RELAY_ENTRIES = new Set<string>(["0x0000000000006ac72ed1d192fa28f0058d3f8806"]);
+// Swaps through these routers are checked for relaying. The routers are public, so many of
+// the swaps turn out to be ordinary self-sent trades.
+export const RELAY_ROUTERS = ["0x42ef97fae7ad46d98baf99a0e505b43b7e1c00e9"];
+export const RELAY = {
+  fundingLookbackBlocks: 100_000, // how far back to look for who funded a deposit account (~1 day)
+  maxTxsPerRefresh: 80, // the rest are picked up by the next refresh
+  maxSecPerRefresh: 120,
+  callGapMs: 150, // spacing between RPC calls, to stay under the public rate limit
+};
+
+export type PriceKey ="usd" | "eth" | "btc" | "kat";
 
 export interface TokenInfo {
   symbol: string;

@@ -138,6 +138,14 @@ function publicRow(b: PublicLeaderboard, r: PublicRow): HTMLTableRowElement {
   );
 }
 
+// What we know about a wallet, under its address: bot, farm or app relayer (known-wallets.ts).
+// A note for admins only; it never affects ranking.
+function labelCell(wallet: string): Node {
+  const known = board && isAdminBoard(board) ? board.labels?.[wallet] : undefined;
+  if (!known) return document.createTextNode("");
+  return el("span", { cls: "wlabel", text: known.label, title: known.note ?? "" });
+}
+
 function adminRow(r: WalletRow): HTMLTableRowElement {
   const flags = el("span", { cls: "flags" });
   for (const f of r.flags) {
@@ -148,7 +156,7 @@ function adminRow(r: WalletRow): HTMLTableRowElement {
     "tr",
     {},
     el("td", {}, rankBadge(r.rank)),
-    el("td", { cls: "left wallet" }, expandToggle(r.wallet), walletLink(r.wallet)),
+    el("td", { cls: "left wallet" }, expandToggle(r.wallet), walletLink(r.wallet), labelCell(r.wallet)),
     el("td", { text: usd(r.volumeUsd) }),
     el("td", { text: r.txs.toLocaleString("en-US") }),
     el("td", { cls: "muted", text: usd(r.feesUsd) }),
@@ -602,14 +610,15 @@ function mostActive(b: Leaderboard): WalletRow[] {
 // Admin: search any wallet, or page through everyone.
 function renderAdminRows(b: Leaderboard): void {
   const q = $<HTMLInputElement>("search").value.trim().toLowerCase();
-  const valid = /^0x[0-9a-f]{0,40}$/.test(q);
-  const list = q && valid
-    ? b.rows.filter((r) => r.wallet.startsWith(q))
+  // A search is a wallet address (prefix) or part of a label.
+  const isAddr = /^0x[0-9a-f]{0,40}$/.test(q);
+  const list = q
+    ? b.rows.filter((r) => (isAddr ? r.wallet.startsWith(q) : (b.labels?.[r.wallet]?.label ?? "").toLowerCase().includes(q)))
     : showAll ? b.rows : mostActive(b);
 
   if (list.length === 0) {
     const msg = q
-      ? valid ? "No trades from this wallet in competition pools this round." : "Enter a wallet address starting with 0x."
+      ? isAddr ? "No trades from this wallet in competition pools this round." : "No wallet on this board has a label matching that."
       : "No ranked traders yet.";
     $("rows").replaceChildren(emptyRow(msg));
   } else {

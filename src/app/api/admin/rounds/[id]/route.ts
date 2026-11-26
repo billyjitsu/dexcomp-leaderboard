@@ -2,7 +2,9 @@ import { after } from "next/server";
 import { sql } from "@/lib/db";
 import { errorJson, json, requireAdmin } from "@/lib/http";
 import { refresh, refreshIfStale } from "@/lib/refresh";
+import { KNOWN_WALLETS, RELAYER_LABEL } from "@/lib/known-wallets";
 import { isRoundId } from "@/lib/rounds";
+import type { WalletLabel } from "@/lib/types";
 
 export const maxDuration = 300;
 
@@ -20,5 +22,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!rows[0]) return errorJson(404, "This round hasn't been built yet. Use Refresh now.");
   }
   after(() => refreshIfStale(id));
-  return json(rows[0].board);
+  // Labels for known bots, farms and app relayers. Added here, not stored in the snapshot.
+  const labels: Record<string, WalletLabel> = {};
+  const relayers = await sql()`select distinct origin from tx_traders where status <> 'direct'`;
+  const relayerSet = new Set(relayers.map((r) => String(r.origin)));
+  for (const { wallet } of (rows[0].board as { rows?: { wallet: string }[] }).rows ?? []) {
+    const known = KNOWN_WALLETS[wallet] ?? (relayerSet.has(wallet) ? RELAYER_LABEL : undefined);
+    if (known) labels[wallet] = known;
+  }
+  return json({ ...(rows[0].board as object), labels });
 }
